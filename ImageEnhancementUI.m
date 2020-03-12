@@ -38,13 +38,14 @@ handles.powerLawImage = emptyImage;
 handles.outputImage = emptyImage;
 axes(handles.outputAxes);
 imshow(handles.outputImage);
-
+%{
 handles.tgroup = uitabgroup('Parent', handles.figure1, 'TabLocation', 'left');
 handles.tab1 = uitab('Parent', handles.tgroup, 'Title', 'Main');
 handles.tab2 = uitab('Parent', handles.tgroup, 'Title', 'View');
 
 set(handles.mainPanel, 'Parent', handles.tab1);
 set(handles.viewPanel, 'Parent', handles.tab2);
+%}
 % Update handles structure
 guidata(hObject, handles);
 
