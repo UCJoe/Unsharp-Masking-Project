@@ -82,7 +82,7 @@ if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColo
     set(hObject,'BackgroundColor',[.9 .9 .9]);
 end
 
-function pipeline(hObject, eventdata, handles, stage)
+function [equalizedImage, powerLawImage, outputImage] = pipeline(hObject, eventdata, handles, stage)
 % Disable Controls and set loading text
 %{
 set(handles.loadingText, 'String', "Loading");
@@ -96,12 +96,13 @@ set(handles.unsharpMaskKSlider, 'Enable', 'off');
 %}
 
 % Apply Histogram Equalization transform
-handles.equalizedImage = handles.inputImage;
-handles.equalizedImage = HistogramEqualizationTransform(handles);
+equalizedImage = HistogramEqualizationTransform(handles);
+handles.equalizedImage = equalizedImage;
 
 % Apply Power Law transform
-handles.powerLawImage = handles.equalizedImage;
-[handles.powerLawImage, power] = PowerLawTransformation(handles);
+[powerLawImage, power] = PowerLawTransformation(handles);
+handles.powerLawImage = powerLawImage;
+
 axes(handles.powerLawAxes);
 powerLawXAxis = [0:.1:1];
 powerLawYAxis = powerLawXAxis.^power;
@@ -110,8 +111,8 @@ set(gca, 'xtick', []);
 set(gca, 'ytick', []);
 
 % Apply Unsharp Masking transform
-handles.outputImage = handles.powerLawImage;
-handles.outputImage = UnsharpMaskingTransform(handles);
+outputImage = UnsharpMaskingTransform(handles);
+handles.outputImage = outputImage;
 
 axes(handles.outputAxes);
 imshow(handles.outputImage);
@@ -135,7 +136,6 @@ set(handles.powerLawSlider, 'Enable', 'on');
 set(handles.unsharpMaskBlurSlider, 'Enable', 'on');
 set(handles.unsharpMaskKSlider, 'Enable', 'on');
 set(handles.loadingText, 'String', "");
-guidata(hObject, handles);
 
 
 % --- Outputs from this function are returned to the command line.
@@ -156,38 +156,49 @@ handles.inputImage = imread([path file]);
 axes(handles.inputAxes);
 imshow(handles.inputImage);
 set(handles.imageNameText, 'String', file);
-pipeline(hObject, eventdata, handles, Stages.Import);
+[handles.equalizedImage, handles.powerLawImage, handles.outputImage]...
+    = pipeline(hObject, eventdata, handles, Stages.Import);
+guidata(hObject, handles);
+
 
 
 % --- Executes on button press in exportButton.
 function exportButton_Callback(hObject, eventdata, handles)
-% hObject    handle to exportButton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+[baseFileName, folder] = uiputfile('outputImage.jpg', 'Specify a file');
+if (baseFileName == 0)
+    return;
+end
+fullFileName = fullfile(folder, baseFileName);
+imwrite(handles.outputImage, fullFileName);
 
 % --- Executes on slider movement.
 function histogramStretchLeftSlider_Callback(hObject, eventdata, handles)
-pipeline(hObject, eventdata, handles, Stages.HistogramEqualization);
+[handles.equalizedImage, handles.powerLawImage, handles.outputImage]...
+    = pipeline(hObject, eventdata, handles, Stages.HistogramEqualization);
 guidata(hObject, handles);
 
 % --- Executes on slider movement.
 function histogramStretchRightSlider_Callback(hObject, eventdata, handles)
-pipeline(hObject, eventdata, handles, Stages.HistogramEqualization);
+[handles.equalizedImage, handles.powerLawImage, handles.outputImage]...
+    = pipeline(hObject, eventdata, handles, Stages.HistogramEqualization);
 guidata(hObject, handles);
 
 % --- Executes on slider movement.
 function powerLawSlider_Callback(hObject, eventdata, handles)
-pipeline(hObject, eventdata, handles, Stages.PowerLaw);
+[handles.equalizedImage, handles.powerLawImage, handles.outputImage]...
+    = pipeline(hObject, eventdata, handles, Stages.PowerLaw);
 guidata(hObject, handles);
 
 % --- Executes on slider movement.
 function unsharpMaskBlurSlider_Callback(hObject, eventdata, handles)
-pipeline(hObject, eventdata, handles, Stages.UnsharpMasking);
+[handles.equalizedImage, handles.powerLawImage, handles.outputImage]...
+    = pipeline(hObject, eventdata, handles, Stages.UnsharpMasking);
 guidata(hObject, handles);
 
 % --- Executes on slider movement.
 function unsharpMaskKSlider_Callback(hObject, eventdata, handles)
-pipeline(hObject, eventdata, handles, Stages.UnsharpMasking);
+[handles.equalizedImage, handles.powerLawImage, handles.outputImage]...
+    = pipeline(hObject, eventdata, handles, Stages.UnsharpMasking);
 guidata(hObject, handles);
 
 
