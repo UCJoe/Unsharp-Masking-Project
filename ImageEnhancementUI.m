@@ -98,7 +98,7 @@ set(handles.unsharpMaskKSlider, 'Enable', 'off');
 % Apply Histogram Equalization transform
 handles.equalizedImage = handles.inputImage;
 if (stage.canApplyHistogramEqualization)
-    
+    handles.equalizedImage = HistogramEqualizationTransform(handles);
 end
 
 % Apply Power Law transform
@@ -117,12 +117,14 @@ axes(handles.outputAxes);
 imshow(handles.outputImage);
 % Calculate Histogram
 histogramXAxis = [1:1:256];
-[inputHistogram, outputHistogram] = CalculateHistograms(handles)
+[inputHistogram, outputHistogram] = CalculateHistograms(handles);
 axes(handles.histogramAxes);
+cla reset;
 hold on;
 stem(histogramXAxis, inputHistogram);
 stem(histogramXAxis, outputHistogram);
 hold off;
+set(handles.histogramAxes,'YScale','log');
 
 % Enable Controls and clear loading text
 set(handles.importButton, 'Enable', 'on');
@@ -184,6 +186,29 @@ function unsharpMaskKSlider_Callback(hObject, eventdata, handles)
 pipeline(hObject, eventdata, handles, Stages.UnsharpMasking);
 
 
+function equalizedImage = HistogramEqualizationTransform(handles)
+[rows, columns, colorDimensions] = size(handles.inputImage);
+equalizedImage = zeros(rows, columns, colorDimensions);
+
+lowBrightness = get(handles.histogramStretchLeftSlider, 'Value') * 256;
+highBrightness = 256 - get(handles.histogramStretchRightSlider, 'Value') * 256;
+stretch = double(256/(highBrightness - lowBrightness));
+
+for color = 1 : colorDimensions
+    for y = 1 : rows
+        for x = 1 : columns
+            if (handles.inputImage(x,y,color) <= lowBrightness)
+                equalizedImage(x,y,color) = 0;
+            elseif (handles.inputImage(x,y,color) >= highBrightness)
+                equalizedImage(x,y,color) = 255;
+            else
+                
+                equalizedImage(x,y,color) = (handles.inputImage(x,y,color)-lowBrightness)*stretch;
+            end
+        end
+    end
+end
+equalizedImage = uint8(equalizedImage);
 
 function FilteredImage = LowpassFilterImage(handles)
 [rows, columns, colorDimensions] = size(handles.OriginalImage);
