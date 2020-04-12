@@ -97,20 +97,26 @@ set(handles.unsharpMaskKSlider, 'Enable', 'off');
 
 % Apply Histogram Equalization transform
 handles.equalizedImage = handles.inputImage;
+handles.equalizedImage = HistogramEqualizationTransform(handles);
 if (stage.canApplyHistogramEqualization)
-    handles.equalizedImage = HistogramEqualizationTransform(handles);
 end
 
 % Apply Power Law transform
 handles.powerLawImage = handles.equalizedImage;
+[handles.powerLawImage, power] = PowerLawTransformation(handles);
+axes(handles.powerLawAxes);
+powerLawXAxis = [0:.1:1];
+powerLawYAxis = powerLawXAxis.^power;
+plot(powerLawXAxis, powerLawYAxis);
+set(gca, 'xtick', []);
+set(gca, 'ytick', []);
+
 if (stage.canApplyPowerLaw)
-    
 end
 
 % Apply Unsharp Masking transform
 handles.outputImage = handles.powerLawImage;
 if (stage.canApplyUnsharpMasking)
-    
 end
 
 axes(handles.outputAxes);
@@ -119,12 +125,12 @@ imshow(handles.outputImage);
 histogramXAxis = [1:1:256];
 [inputHistogram, outputHistogram] = CalculateHistograms(handles);
 axes(handles.histogramAxes);
-cla reset;
+cla(handles.histogramAxes);
+set(handles.histogramAxes, 'YScale', 'log');
 hold on;
 stem(histogramXAxis, inputHistogram);
 stem(histogramXAxis, outputHistogram);
 hold off;
-set(handles.histogramAxes,'YScale','log');
 
 % Enable Controls and clear loading text
 set(handles.importButton, 'Enable', 'on');
@@ -168,22 +174,27 @@ function exportButton_Callback(hObject, eventdata, handles)
 % --- Executes on slider movement.
 function histogramStretchLeftSlider_Callback(hObject, eventdata, handles)
 pipeline(hObject, eventdata, handles, Stages.HistogramEqualization);
+guidata(hObject, handles);
 
 % --- Executes on slider movement.
 function histogramStretchRightSlider_Callback(hObject, eventdata, handles)
 pipeline(hObject, eventdata, handles, Stages.HistogramEqualization);
+guidata(hObject, handles);
 
 % --- Executes on slider movement.
 function powerLawSlider_Callback(hObject, eventdata, handles)
 pipeline(hObject, eventdata, handles, Stages.PowerLaw);
+guidata(hObject, handles);
 
 % --- Executes on slider movement.
 function unsharpMaskBlurSlider_Callback(hObject, eventdata, handles)
 pipeline(hObject, eventdata, handles, Stages.UnsharpMasking);
+guidata(hObject, handles);
 
 % --- Executes on slider movement.
 function unsharpMaskKSlider_Callback(hObject, eventdata, handles)
 pipeline(hObject, eventdata, handles, Stages.UnsharpMasking);
+guidata(hObject, handles);
 
 
 function equalizedImage = HistogramEqualizationTransform(handles)
@@ -209,6 +220,29 @@ for color = 1 : colorDimensions
     end
 end
 equalizedImage = uint8(equalizedImage);
+
+function [powerLawImage, power] = PowerLawTransformation(handles)
+[rows, columns, colorDimensions] = size(handles.equalizedImage);
+powerLawImage = zeros(rows, columns, colorDimensions);
+inputImage = double(handles.equalizedImage);
+
+value = round(get(handles.powerLawSlider, 'Value'), 2);
+
+if (value <= .5)
+    power = 1 + (value - .5) * 2;
+elseif (value > .5)
+    power = 1 + (value - .5) * 20;
+end
+
+for color = 1 : colorDimensions
+    for y = 1 : rows
+        for x = 1 : columns
+            weightedBrightness = inputImage(x,y,color)/256;
+            powerLawImage(x,y,color) = weightedBrightness ^ power *256;
+        end
+    end
+end
+powerLawImage = uint8(powerLawImage);
 
 function FilteredImage = LowpassFilterImage(handles)
 [rows, columns, colorDimensions] = size(handles.OriginalImage);
