@@ -52,6 +52,89 @@ guidata(hObject, handles);
 % UIWAIT makes ImageEnhancementUI wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
+% --- Executes during object creation, after setting all properties.
+function histogramStretchLeftSlider_CreateFcn(hObject, eventdata, handles)
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+% --- Executes during object creation, after setting all properties.
+function histogramStretchRightSlider_CreateFcn(hObject, eventdata, handles)
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+% --- Executes during object creation, after setting all properties.
+function powerLawSlider_CreateFcn(hObject, eventdata, handles)
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+% --- Executes during object creation, after setting all properties.
+function unsharpMaskBlurSlider_CreateFcn(hObject, eventdata, handles)
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+% --- Executes during object creation, after setting all properties.
+function unsharpMaskKSlider_CreateFcn(hObject, eventdata, handles)
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+function pipeline(hObject, eventdata, handles, stage)
+% Disable Controls and set loading text
+%{
+set(handles.loadingText, 'String', "Loading");
+set(handles.importButton, 'Enable', 'off');
+set(handles.exportButton, 'Enable', 'off');
+set(handles.histogramStretchLeftSlider, 'Enable', 'off');
+set(handles.histogramStretchRightSlider, 'Enable', 'off');
+set(handles.powerLawSlider, 'Enable', 'off');
+set(handles.unsharpMaskBlurSlider, 'Enable', 'off');
+set(handles.unsharpMaskKSlider, 'Enable', 'off');
+%}
+
+% Apply Histogram Equalization transform
+handles.equalizedImage = handles.inputImage;
+if (stage.canApplyHistogramEqualization)
+    
+end
+
+% Apply Power Law transform
+handles.powerLawImage = handles.equalizedImage;
+if (stage.canApplyPowerLaw)
+    
+end
+
+% Apply Unsharp Masking transform
+handles.outputImage = handles.powerLawImage;
+if (stage.canApplyUnsharpMasking)
+    
+end
+
+axes(handles.outputAxes);
+imshow(handles.outputImage);
+% Calculate Histogram
+histogramXAxis = [1:1:256];
+[inputHistogram, outputHistogram] = CalculateHistograms(handles)
+axes(handles.histogramAxes);
+hold on;
+stem(histogramXAxis, inputHistogram);
+stem(histogramXAxis, outputHistogram);
+hold off;
+
+% Enable Controls and clear loading text
+set(handles.importButton, 'Enable', 'on');
+set(handles.exportButton, 'Enable', 'on');
+set(handles.histogramStretchLeftSlider, 'Enable', 'on');
+set(handles.histogramStretchRightSlider, 'Enable', 'on');
+set(handles.powerLawSlider, 'Enable', 'on');
+set(handles.unsharpMaskBlurSlider, 'Enable', 'on');
+set(handles.unsharpMaskKSlider, 'Enable', 'on');
+set(handles.loadingText, 'String', "");
+guidata(hObject, handles);
+
 
 % --- Outputs from this function are returned to the command line.
 function varargout = ImageEnhancementUI_OutputFcn(hObject, eventdata, handles)
@@ -71,6 +154,7 @@ handles.inputImage = imread([path file]);
 axes(handles.inputAxes);
 imshow(handles.inputImage);
 set(handles.imageNameText, 'String', file);
+pipeline(hObject, eventdata, handles, Stages.Import);
 
 
 % --- Executes on button press in exportButton.
@@ -79,115 +163,27 @@ function exportButton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-
-% --- Executes on slider movement.
-function unsharpMaskBlurSlider_Callback(hObject, eventdata, handles)
-% hObject    handle to unsharpMaskBlurSlider (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-
-
-% --- Executes during object creation, after setting all properties.
-function unsharpMaskBlurSlider_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to unsharpMaskBlurSlider (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: slider controls usually have a light gray background.
-if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor',[.9 .9 .9]);
-end
-
-
-% --- Executes on slider movement.
-function unsharpMaskKSlider_Callback(hObject, eventdata, handles)
-% hObject    handle to unsharpMaskKSlider (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-
-
-% --- Executes during object creation, after setting all properties.
-function unsharpMaskKSlider_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to unsharpMaskKSlider (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: slider controls usually have a light gray background.
-if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor',[.9 .9 .9]);
-end
-
-
-% --- Executes on slider movement.
-function powerLawSlider_Callback(hObject, eventdata, handles)
-% hObject    handle to powerLawSlider (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-
-
-% --- Executes during object creation, after setting all properties.
-function powerLawSlider_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to powerLawSlider (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: slider controls usually have a light gray background.
-if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor',[.9 .9 .9]);
-end
-
-
 % --- Executes on slider movement.
 function histogramStretchLeftSlider_Callback(hObject, eventdata, handles)
-% hObject    handle to histogramStretchLeftSlider (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-
-
-% --- Executes during object creation, after setting all properties.
-function histogramStretchLeftSlider_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to histogramStretchLeftSlider (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: slider controls usually have a light gray background.
-if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor',[.9 .9 .9]);
-end
-
+pipeline(hObject, eventdata, handles, Stages.HistogramEqualization);
 
 % --- Executes on slider movement.
 function histogramStretchRightSlider_Callback(hObject, eventdata, handles)
-% hObject    handle to histogramStretchRightSlider (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+pipeline(hObject, eventdata, handles, Stages.HistogramEqualization);
 
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+% --- Executes on slider movement.
+function powerLawSlider_Callback(hObject, eventdata, handles)
+pipeline(hObject, eventdata, handles, Stages.PowerLaw);
+
+% --- Executes on slider movement.
+function unsharpMaskBlurSlider_Callback(hObject, eventdata, handles)
+pipeline(hObject, eventdata, handles, Stages.UnsharpMasking);
+
+% --- Executes on slider movement.
+function unsharpMaskKSlider_Callback(hObject, eventdata, handles)
+pipeline(hObject, eventdata, handles, Stages.UnsharpMasking);
 
 
-% --- Executes during object creation, after setting all properties.
-function histogramStretchRightSlider_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to histogramStretchRightSlider (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: slider controls usually have a light gray background.
-if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor',[.9 .9 .9]);
-end
 
 function FilteredImage = LowpassFilterImage(handles)
 [rows, columns, colorDimensions] = size(handles.OriginalImage);
@@ -236,3 +232,21 @@ function EnhancedImage = AddDifference(handles)
 [rows, columns, colorDimensions] = size(handles.FilteredImage);
 OriginalImage = handles.OriginalImage([1 : rows],[1 : columns],[1 2 3]);
 EnhancedImage = uint8(handles.Difference * handles.k) + OriginalImage;
+
+function [inputHistogram, outputHistogram] = CalculateHistograms(handles)
+inputHistogram = zeros(1, 256);
+outputHistogram = zeros(1, 256);
+
+[rows, columns, colorDimensions] = size(handles.inputImage);
+for color = 1 : colorDimensions
+    for y = 1 : rows
+        for x = 1 : columns
+            inputPixelBrightness = handles.inputImage(y, x, color) + 1;
+            inputHistogram(inputPixelBrightness) = inputHistogram(inputPixelBrightness) + 1;
+            
+            outputPixelBrightness = handles.outputImage(y, x, color) + 1;
+            outputHistogram(outputPixelBrightness) = outputHistogram(outputPixelBrightness) + 1;
+            
+        end
+    end
+end
