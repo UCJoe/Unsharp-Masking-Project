@@ -98,8 +98,6 @@ set(handles.unsharpMaskKSlider, 'Enable', 'off');
 % Apply Histogram Equalization transform
 handles.equalizedImage = handles.inputImage;
 handles.equalizedImage = HistogramEqualizationTransform(handles);
-if (stage.canApplyHistogramEqualization)
-end
 
 % Apply Power Law transform
 handles.powerLawImage = handles.equalizedImage;
@@ -111,13 +109,9 @@ plot(powerLawXAxis, powerLawYAxis);
 set(gca, 'xtick', []);
 set(gca, 'ytick', []);
 
-if (stage.canApplyPowerLaw)
-end
-
 % Apply Unsharp Masking transform
 handles.outputImage = handles.powerLawImage;
-if (stage.canApplyUnsharpMasking)
-end
+handles.outputImage = UnsharpMaskingTransform(handles);
 
 axes(handles.outputAxes);
 imshow(handles.outputImage);
@@ -206,8 +200,8 @@ highBrightness = 256 - get(handles.histogramStretchRightSlider, 'Value') * 256;
 stretch = double(256/(highBrightness - lowBrightness));
 
 for color = 1 : colorDimensions
-    for y = 1 : rows
-        for x = 1 : columns
+    for x = 1 : rows
+        for y = 1 : columns
             if (handles.inputImage(x,y,color) <= lowBrightness)
                 equalizedImage(x,y,color) = 0;
             elseif (handles.inputImage(x,y,color) >= highBrightness)
@@ -235,8 +229,8 @@ elseif (value > .5)
 end
 
 for color = 1 : colorDimensions
-    for y = 1 : rows
-        for x = 1 : columns
+    for x = 1 : rows
+        for y = 1 : columns
             weightedBrightness = inputImage(x,y,color)/256;
             powerLawImage(x,y,color) = weightedBrightness ^ power *256;
         end
@@ -244,53 +238,20 @@ for color = 1 : colorDimensions
 end
 powerLawImage = uint8(powerLawImage);
 
-function FilteredImage = LowpassFilterImage(handles)
-[rows, columns, colorDimensions] = size(handles.OriginalImage);
-newRows = rows - handles.FilterSize + 1;
-if (newRows < 1)
-    newRows = 1;
-end
-newColumns = columns - handles.FilterSize + 1;
-if (newColumns < 1)
-    newColumns = 1;
-end
-FilteredImage = zeros(newRows, newColumns, colorDimensions);
+function unsharpMaskingImage = UnsharpMaskingTransform(handles)
+[rows, columns, colorDimensions] = size(handles.powerLawImage);
+inputImage = double(handles.powerLawImage);
 
-if (rows > handles.FilterSize && columns > handles.FilterSize)
-    for color = 1 : colorDimensions
-        for y = 1 : newRows
-            for x = 1 : newColumns
-                sum = 0;
-                for a = 0 : handles.FilterSize - 1
-                    for b = 0 : handles.FilterSize - 1
-                        sum = sum + double(handles.OriginalImage(y + a, x + b, color));
-                    end
-                end
-                filterArea = handles.FilterSize ^ 2;
-                brightness = round(sum / filterArea);
-                FilteredImage(y, x, color) = brightness;
-            end
-        end
-    end
-end
-FilteredImage = uint8(FilteredImage);
+blurValue = 1 + round(get(handles.unsharpMaskBlurSlider, 'Value'), 1) * 10;
+blurredImage = imgaussfilt(inputImage, blurValue);
 
-function Difference = ImageDifference(handles)
-[rows, columns, colorDimensions] = size(handles.FilteredImage);
-Difference = zeros(rows, columns, colorDimensions);
+unsharpMask = inputImage - blurredImage;
 
-for color = 1 : colorDimensions
-    for y = 1 :rows
-        for x = 1 : columns
-            Difference(y, x, color) = handles.OriginalImage(y, x, color) - handles.FilteredImage(y, x, color);
-        end
-    end
-end
+kValue = get(handles.unsharpMaskKSlider, 'Value');
 
-function EnhancedImage = AddDifference(handles)
-[rows, columns, colorDimensions] = size(handles.FilteredImage);
-OriginalImage = handles.OriginalImage([1 : rows],[1 : columns],[1 2 3]);
-EnhancedImage = uint8(handles.Difference * handles.k) + OriginalImage;
+unsharpMaskingImage = inputImage + kValue .* unsharpMask;
+unsharpMaskingImage = uint8(unsharpMaskingImage);
+
 
 function [inputHistogram, outputHistogram] = CalculateHistograms(handles)
 inputHistogram = zeros(1, 256);
@@ -298,12 +259,12 @@ outputHistogram = zeros(1, 256);
 
 [rows, columns, colorDimensions] = size(handles.inputImage);
 for color = 1 : colorDimensions
-    for y = 1 : rows
-        for x = 1 : columns
-            inputPixelBrightness = handles.inputImage(y, x, color) + 1;
+    for x = 1 : rows
+        for y = 1 : columns
+            inputPixelBrightness = handles.inputImage(x, y, color) + 1;
             inputHistogram(inputPixelBrightness) = inputHistogram(inputPixelBrightness) + 1;
             
-            outputPixelBrightness = handles.outputImage(y, x, color) + 1;
+            outputPixelBrightness = handles.outputImage(x, y, color) + 1;
             outputHistogram(outputPixelBrightness) = outputHistogram(outputPixelBrightness) + 1;
             
         end
