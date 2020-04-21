@@ -135,7 +135,7 @@ set(handles.histogramStretchRightSlider, 'Enable', 'on');
 set(handles.powerLawSlider, 'Enable', 'on');
 set(handles.unsharpMaskBlurSlider, 'Enable', 'on');
 set(handles.unsharpMaskKSlider, 'Enable', 'on');
-set(handles.loadingText, 'String', "");
+set(handles.loadingText, 'String', '');
 
 
 % --- Outputs from this function are returned to the command line.
